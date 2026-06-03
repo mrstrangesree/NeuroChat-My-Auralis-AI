@@ -1,0 +1,46 @@
+services:
+  # ── Backend ─────────────────────────────────────────────────
+  - type: web
+    name: neurochat-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: starter
+    envVars:
+      - key: OLLAMA_BASE_URL
+        value: https://YOUR-OLLAMA-URL-HERE
+      - key: DEFAULT_MODEL
+        value: llama3.2
+      - key: DEFAULT_EMBEDDING_MODEL
+        value: nomic-embed-text
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./neurochat.db
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: '["https://neurochat-frontend.onrender.com"]'
+    disk:
+      name: neurochat-data
+      mountPath: /opt/render/project/src
+      sizeGB: 5
+
+  # ── Frontend ─────────────────────────────────────────────────
+  - type: web
+    name: neurochat-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        value: https://neurochat-backend.onrender.com/api
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

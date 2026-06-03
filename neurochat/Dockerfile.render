@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system deps + Ollama
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    curl -fsSL https://ollama.ai/install.sh | sh && \
+    rm -rf /var/lib/apt/lists/*
+
+# Backend Python deps
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app source
+COPY backend/ .
+
+# Create required directories
+RUN mkdir -p uploads chroma_db logs
+
+# Startup script
+COPY start-render.sh /start-render.sh
+RUN chmod +x /start-render.sh
+
+EXPOSE 8000
+
+CMD ["/start-render.sh"]
